@@ -1,0 +1,46 @@
+nameOverride: geoip-sync
+
+ifm:
+  image:
+    name: biovanta2002/interface-manager
+    tag: v0.0.3
+
+  configs: {}
+  replica: 1
+
+  resources:
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+    limits:
+      memory: "200Mi"
+      cpu: "150m"
+
+gs:
+  image:
+    name: biovanta2002/git-sync
+    tag: v0.0.2
+
+  replica: 1
+
+  resources:
+    requests:
+      memory: "50Mi"
+      cpu: "100m"
+    limits:
+      memory: "200Mi"
+      cpu: "150m"
+
+nginx:
+  image: nginx:stable-alpine
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+updater:
+  image: biovanta2002/please-protect-jobs:v0.0.23
+  downloadDir: /data/mmdb
+  remoteBaseUrl: 'https://downloads.center.please-protect.com'
+  checkInterval: 3600
+  remoteVersionPath: version.json

@@ -1,0 +1,63 @@
+# values.yaml
+vector:
+  role: Stateless-Aggregator
+  fullnameOverride: vector-auditlog
+
+  replicas: 1
+
+  service:
+    enabled: true
+    type: ClusterIP
+    ports:
+      - name: http-ingest
+        port: 8080
+        targetPort: 8686
+        protocol: TCP
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1500m
+      memory: 2Gi
+
+  env:
+    - name: VECTOR_SELF_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+
+    - name: ES_USER
+      valueFrom:
+        secretKeyRef:
+          name: es-basic-authen
+          key: ES_USER
+
+    - name: ES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: es-basic-authen
+          key: ES_PASSWORD
+
+    - name: DUMMY
+      value: "001"
+
+  customConfig:
+    data_dir: /vector-data-dir
+    api:
+      enabled: false
+
+  extraVolumes:
+    - name: vector-config
+      configMap:
+        name: vector-auditlog-config
+
+  extraVolumeMounts:
+    - name: vector-config
+      mountPath: /etc/vector/custom-config
+      readOnly: true
+
+  args:
+    - "--config"
+    - "/etc/vector/custom-config/vector.yaml"

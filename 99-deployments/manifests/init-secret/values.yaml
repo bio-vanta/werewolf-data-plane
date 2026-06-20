@@ -1,0 +1,14 @@
+image:
+  name: biovanta2002/please-protect-jobs
+  tag: v0.0.14
+
+configs: {}
+replica: 1
+
+resources:
+  requests:
+    memory: "200Mi"
+    cpu: "100m"
+  limits:
+    memory: "400Mi"
+    cpu: "150m"

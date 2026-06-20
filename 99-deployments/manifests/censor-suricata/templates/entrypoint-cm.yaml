@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: suricata-script-config
+data:
+  entrypoint.sh: |
+    #!/bin/sh
+    set -e
+
+    RULE_FILE="/var/lib/suricata/rules/suricata.rules"
+
+    IFACE_API="http://interface-manager-service.pp-system.svc.cluster.local/interfaces/enabled"
+    HEALTH_API="http://interface-manager-service.pp-system.svc.cluster.local/healthz"
+
+    ### IFACE=$(ls /sys/class/net | grep -Ev '^(lo|cni|flannel|docker|veth)' | head -n1)
+
+    echo "[*] Waiting for interface-manager..."
+
+    until curl -sf $HEALTH_API >/dev/null; do
+      echo "[*] interface-manager not ready yet..."
+      sleep 2
+    done
+
+    echo "[*] Fetching interfaces..."
+
+    IFACES=""
+    while [ -z "$IFACES" ]; do
+      IFACES=$(curl -s $IFACE_API)
+      if [ -z "$IFACES" ]; then
+        echo "[*] No interfaces returned yet..."
+        sleep 2
+      fi
+    done
+
+    ARGS=""
+    INDEX=0
+    CLUSTER_ID=20
+
+    for i in $IFACES; do
+        echo "[*] Mapping $i to af-packet index $INDEX with Cluster ID $CLUSTER_ID"
+        
+        # ต้องระบุทับทั้ง interface และ cluster-id ใน index นั้นๆ
+        ARGS="$ARGS -i $i \
+          --set af-packet.$INDEX.interface=$i \
+          --set af-packet.$INDEX.cluster-id=$CLUSTER_ID \
+          --set af-packet.$INDEX.tpacket-v3=no \
+          --set af-packet.$INDEX.cluster-type=cluster_flow"
+        
+        CLUSTER_ID=$((CLUSTER_ID + 1))
+        INDEX=$((INDEX + 1))
+    done
+
+    echo "[*] Using interfaces: $IFACES"
+    echo "[*] Using aruguments: $ARGS"
+
+    touch {{ .Values.suricataEth0.logDir }}/suricata.fast.log
+
+    if [ ! -f "$RULE_FILE" ]; then
+      echo "[*] Rules not found, running suricata-update..."
+      suricata-update
+    else
+      echo "[*] Rules already exist, skip update"
+    fi
+
+    echo "[*] Final Check - Memlock Limit: $(ulimit -l)"
+    exec suricata ${ARGS} -c /etc/suricata/{{ .Values.suricataEth0.suricataConfigName }}
+    
+    #exec suricata -i $1 -c /etc/suricata/{{ .Values.suricataEth0.suricataConfigName }}

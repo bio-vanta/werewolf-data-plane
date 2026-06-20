@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: es-init-05 #เปลี่ยนชื่อเมื่อมีการแก้ไขสคริปต์เพื่อให้รันใหม่ได้
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: es-init
+          image: biovanta2002/please-protect-jobs:v0.0.7
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for ES to be ready with authentication..."
+
+              until curl -k -s -f -u "$ES_USER:$ES_PASSWORD" \
+                "$ES_URL/_cluster/health?wait_for_status=yellow&timeout=5s" | grep -q '"status":"\(yellow\|green\)"'; do
+                echo "Elasticsearch is not ready yet... sleeping"
+                sleep 5
+              done
+              echo "Elasticsearch is UP and READY!"
+
+              echo "ES is ready. Running bootstrap..."
+              ruby es-init.rb
+
+          env:
+            - name: ES_URL
+              value: "https://es-censor-es-http:9200"
+
+            - name: ES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: es-basic-authen
+                  key: username
+
+            - name: ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: es-basic-authen
+                  key: password
+
+            - name: INDEX_TEMPLATE_NAME
+              value: "censor-logs-template"
+
+            - name: INDEX_ILM_POLICY
+              value: "censor-logs-ilm-policy"
+
+            - name: INDEX_NAME
+              value: "censor-events-*"
