@@ -39,7 +39,7 @@ nginx:
     port: 80
 
 updater:
-  image: biovanta2002/werewolf-jobs:v0.0.23
+  image: biovanta2002/please-protect-jobs:v0.0.23
   downloadDir: /data/mmdb
   remoteBaseUrl: 'https://downloads.center.bevorax.com'
   checkInterval: 3600
