@@ -9,7 +9,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: es-init
-          image: biovanta2002/please-protect-jobs:v0.0.7
+          image: biovanta2002/werewolf-jobs:v0.0.7
           command:
             - /bin/sh
             - -c
