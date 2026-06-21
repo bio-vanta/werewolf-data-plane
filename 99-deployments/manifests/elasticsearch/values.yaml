@@ -1,2 +1,28 @@
 ---
 domain: kibana.sensor.local
+
+# ⚠️ ค่าด้านล่างถูก trim ให้พอดีกับ test VM (disk 100Gi / RAM 31Gi)
+# ก่อน deploy center cluster ของจริง ให้ปรับ storage/RAM กลับ (data 600Gi, master 50Gi ฯลฯ)
+es:
+  secureSettings: false   # ปิด gcs-credentials snapshot บน test cluster
+  master:
+    count: 1
+    storage: 5Gi
+    cpuRequest: 500m
+    cpuLimit: 1
+    memRequest: 1Gi
+    memLimit: 2Gi
+    javaOpts: "-Xms1g -Xmx1g"
+  data:
+    count: 1
+    storage: 20Gi
+    cpuRequest: 1
+    cpuLimit: 2
+    memRequest: 2Gi
+    memLimit: 3Gi
+    javaOpts: "-Xms1500m -Xmx1500m"
+
+kibana:
+  count: 1
+  memRequest: 512Mi
+  memLimit: 1Gi

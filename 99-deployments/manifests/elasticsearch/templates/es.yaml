@@ -4,14 +4,16 @@ metadata:
   name: es-censor
 spec:
   version: 8.18.8
+  {{- if .Values.es.secureSettings }}
   secureSettings:
     - secretName: gcs-credentials
+  {{- end }}
   nodeSets:
   # ---------------------------------------------------------
   # 1. Masters Node: เน้นบริหารจัดการ ไม่เก็บข้อมูล
   # ---------------------------------------------------------
   - name: masters
-    count: 1
+    count: {{ .Values.es.master.count }}
     config:
       node.store.allow_mmap: true
       node.roles: ["master"]
@@ -28,14 +30,14 @@ spec:
         - name: elasticsearch
           env:
           - name: ES_JAVA_OPTS
-            value: "-Xms2g -Xmx2g" # 50% ของ Limit 4Gi
+            value: "{{ .Values.es.master.javaOpts }}"
           resources:
             requests:
-              memory: 2Gi # เพิ่มจาก 1Gi เพื่อความนิ่ง
-              cpu: 1
+              memory: {{ .Values.es.master.memRequest }}
+              cpu: {{ .Values.es.master.cpuRequest }}
             limits:
-              memory: 4Gi
-              cpu: 2
+              memory: {{ .Values.es.master.memLimit }}
+              cpu: {{ .Values.es.master.cpuLimit }}
     volumeClaimTemplates:
     - metadata:
         name: elasticsearch-data
@@ -44,13 +46,13 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 50Gi # Master ไม่เก็บ Data ลดขนาดลงได้เพื่อประหยัดพื้นที่
+            storage: {{ .Values.es.master.storage }}
 
   # ---------------------------------------------------------
   # 2. Data Node: รับโหลดหนัก เก็บข้อมูล ทำงาน Snapshot
   # ---------------------------------------------------------
   - name: data
-    count: 1
+    count: {{ .Values.es.data.count }}
     config:
       node.store.allow_mmap: true
       # เพิ่ม data_content และ data_hot เพื่อรองรับ Index ทั่วไปใน v8.x
@@ -67,14 +69,14 @@ spec:
         - name: elasticsearch
           env:
           - name: ES_JAVA_OPTS
-            value: "-Xms4g -Xmx4g" # 50% ของ Limit 8Gi
+            value: "{{ .Values.es.data.javaOpts }}"
           resources:
             requests:
-              memory: 4Gi # ขอไว้เลย 4Gi เพื่อป้องกันการโดนแย่ง RAM
-              cpu: 2      # ขอไว้เลย 2 Core สำหรับงานประมวลผลหนัก
+              memory: {{ .Values.es.data.memRequest }}
+              cpu: {{ .Values.es.data.cpuRequest }}
             limits:
-              memory: 8Gi
-              cpu: 4
+              memory: {{ .Values.es.data.memLimit }}
+              cpu: {{ .Values.es.data.cpuLimit }}
     volumeClaimTemplates:
     - metadata:
         name: elasticsearch-data
@@ -83,7 +85,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 600Gi
+            storage: {{ .Values.es.data.storage }}
   auth:
     fileRealm:
     - secretName: es-basic-authen
@@ -95,12 +97,19 @@ metadata:
   name: es-censor
 spec:
   version: 8.18.8
-  count: 1
+  count: {{ .Values.kibana.count }}
   elasticsearchRef:
     name: es-censor
+  podTemplate:
+    spec:
+      containers:
+      - name: kibana
+        resources:
+          requests:
+            memory: {{ .Values.kibana.memRequest }}
+          limits:
+            memory: {{ .Values.kibana.memLimit }}
   config:
     monitoring.ui.ccs.enabled: false
-    # ปรับให้ Kibana ไม่แย่ง RAM เยอะเกินไป (เผื่อเครื่อง K3S มี RAM จำกัด)
-    # server.maxPayload: 10485760
     server.basePath: "/tools/kibana"
     server.rewriteBasePath: true
