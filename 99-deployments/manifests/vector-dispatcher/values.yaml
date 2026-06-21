@@ -1,6 +1,6 @@
 # values.yaml
 vector:
-  enabled: false
+  enabled: true   # test VM: เปิดเพื่อทดสอบ Vector consume Kafka (เดิม false)
   role: Stateless-Aggregator
   fullnameOverride: vector-dispatcher
 

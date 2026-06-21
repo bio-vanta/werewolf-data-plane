@@ -8,7 +8,7 @@ data:
       kafka_input:
         type: kafka
         bootstrap_servers: kafka.kafka.svc.cluster.local:9092
-        group_id: for-dispatcher-es
+        group_id: for-dispatcher-vector   # test: group แยกจาก logstash-dispatcher (for-dispatcher-es) เพื่อ consume อิสระ
         topics:
           - transformed-topic-beat
         decoding:
