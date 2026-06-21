@@ -20,15 +20,15 @@ kafka:
   autoCreateTopicsEnable: true
   
   controller:
-    replicaCount: 1   # test VM: KRaft single node (เดิม 3 — ปรับกลับก่อน prod)
-    heapOpts: "-Xms768m -Xmx768m"
+    replicaCount: 3   # ต้องตรง KRaft voter set ที่ format ไว้ (0,1,2) — test VM ลด CPU/heap แทน
+    heapOpts: "-Xms512m -Xmx512m"
     resources:
       requests:
-        cpu: 500m
-        memory: 1Gi
+        cpu: 250m
+        memory: 768Mi
       limits:
-        cpu: 2
-        memory: 2Gi
+        cpu: 1
+        memory: 1536Mi
 
   metrics:
     jmx:
